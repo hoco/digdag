@@ -35,11 +35,13 @@ class BqJobRunner
     private static final String START = "start";
     private static final String RUNNING = "running";
     private static final String CHECK = "check";
+    private static final String LOCATION = "location";
 
     private final TaskRequest request;
     private final BqClient bq;
     private final TaskState state;
     private final String projectId;
+    private final String location;
 
     BqJobRunner(TaskRequest request, BqClient bq, String projectId)
     {
@@ -47,6 +49,7 @@ class BqJobRunner
         this.bq = Objects.requireNonNull(bq, "bq");
         this.state = TaskState.of(request);
         this.projectId = Objects.requireNonNull(projectId, "projectId");
+        this.location = request.getConfig().getOptional(LOCATION, String.class).orNull();
     }
 
     Job runJob(JobConfiguration config)
@@ -61,7 +64,8 @@ class BqJobRunner
 
         JobReference reference = new JobReference()
                 .setProjectId(projectId)
-                .setJobId(jobId.get());
+                .setJobId(jobId.get())
+                .setLocation(location);
 
         // Start job
         pollingRetryExecutor(state, START)
@@ -97,7 +101,7 @@ class BqJobRunner
                             .withErrorMessage("BigQuery job status check failed: %s", canonicalJobId)
                             .run(s -> {
                                 logger.info("Checking BigQuery job status: {}", canonicalJobId);
-                                return bq.jobStatus(projectId, jobId.get());
+                                return bq.jobStatus(projectId, jobId.get(), location);
                             });
 
                     // Done yet?

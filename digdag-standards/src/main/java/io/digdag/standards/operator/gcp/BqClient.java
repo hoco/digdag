@@ -170,11 +170,13 @@ class BqClient
                 .execute();
     }
 
-    Job jobStatus(String projectId, String jobId)
+    Job jobStatus(String projectId, String jobId, String location)
             throws IOException
     {
+        client.jobs().get(projectId, jobId);
         return client.jobs()
                 .get(projectId, jobId)
+                .setLocation(location)
                 .execute();
     }
 
